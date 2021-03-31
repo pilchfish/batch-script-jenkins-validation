@@ -1,5 +1,6 @@
 ECHO OFF
 title: "Jenkins Code Validation Script"
+setlocal ENABLEDELAYEDEXPANSION
 
 :: IMPORTANT must call and load configuraton.bat file first
 ECHO config_file :: %_has_config_file_been_loaded%
@@ -112,6 +113,29 @@ GOTO EOF
     tasklist /FI "IMAGENAME eq jenkins.exe" 2>NUL | find /I /N "jenkins.exe">NUL
     if "%ERRORLEVEL%"=="0" (
         echo Local Jenkins Server up and running
+        GOTO ISJAVAEXERUNNING
+    )
+    if NOT %ERRORLEVEL%=="0" (
+        echo Local Jenkins Server is down
+        GOTO ISJAVAEXERUNNING
+    )
+    GOTO EOF
+    :ISJAVAEXERUNNING
+    tasklist /FI "IMAGENAME eq java.exe" 2>NUL | find /I /N "java.exe">NUL
+    if "%ERRORLEVEL%"=="0" (
+        echo Local Java Jar up and running
+        GOTO ISJAVACONSOLERUNNING
+    )
+    if NOT %ERRORLEVEL%=="0" (
+        echo Local Java exe is down
+        GOTO ISJAVACONSOLERUNNING
+    )
+    GOTO EOF
+    :ISJAVACONSOLERUNNING
+    tasklist /FI "SESSIONNAME eq console" 2>NUL | find /I /N "java.exe">NUL
+    if "%ERRORLEVEL%"=="0" (
+        echo Local Java Console up and running
+        ECHO Will now establish connection to Localhost
         GOTO VALATECODELOCAL
     )
     if NOT %ERRORLEVEL%=="0" (
@@ -125,7 +149,8 @@ GOTO EOF
         ECHO Will attempt to start Server now
         START cmd /C java -jar "C:\Program Files\Jenkins WAR\jenkins.war"
         timeout /T 20
-        set /A %_COUNTER%=%_COUNTER%+1
+        set /A _COUNTER=!_COUNTER!+1
+        ECHO !_COUNTER!
         GOTO ISJENKINSSERVERRUNNING
     ) else (
         GOTO DECISIONTIME

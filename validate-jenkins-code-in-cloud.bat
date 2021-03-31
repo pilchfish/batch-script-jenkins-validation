@@ -26,7 +26,6 @@ set ERRORFILE=errors_found.txt
 IF EXIST %ERRORFILE% (
     ECHO %Yellow%Deleting file: errors_found.txt%White%
     del %ERRORFILE%
-    timeout 2
     ECHO.
 ) ELSE (
     ECHO No file to delete.
@@ -50,7 +49,7 @@ ECHO.
 
 IF EXIST %ERRORFILE% (
     findstr /I /B /L  "Errors" %ERRORFILE%>error.txt
-    ECHO error :: %errorlevel%
+    REM ECHO error :: %errorlevel%
     if !errorlevel!==0 (
         GOTO ERRORS_FOUND
     )
@@ -59,31 +58,46 @@ IF EXIST %ERRORFILE% (
     REM if errorlevel==0 (
     REM     GOTO JENKINS_FOUND
     REM )
-    findstr /I /B /L "<html>" %ERRORFILE%>html.txt
-    ECHO html :: %errorlevel%
+    findstr /I /B "<html>" %ERRORFILE%>html.txt
+    REM ECHO html :: %errorlevel%
     if !errorlevel!==0 (
         GOTO HTML_FOUND
     )
-    findstr /I /B /L "Jenkinsfile" %ERRORFILE%>jenkinsfile.txt
-    ECHO Jenkinsfile :: %errorlevel%
+    findstr /I "<DOCTYPE html>" %ERRORFILE%>doctype.txt
+    REM ECHO html :: %errorlevel%
+    if !errorlevel!==0 (
+        GOTO DOCTYPE_FOUND
+    )
+    findstr /I /B "Jenkinsfile" %ERRORFILE%>jenkinsfile.txt
+    REM ECHO Jenkinsfile :: %errorlevel%
     if !errorlevel!==0 (
         GOTO JENKINSFILE_FOUND
     )
     ECHO IFs failed to catch any errors/success clauses
+    ECHO Unknow Error detected. Clues may lie within the "errors_found.txt" file
+    ECHO Please update code if you would like to catch this next time
 )
 
 :ERRORS_FOUND
 REM echo errors found
 GOTO PRINT_OUT_JENKINS_ERROR_FOUND
 GOTO EOF
-:JENKINS_FOUND
-REM echo jenkins found
-GOTO PRINT_OUT_JENKINS_ERROR_FOUND
-GOTO EOF
+
+REM :JENKINS_FOUND
+REM REM echo jenkins found
+REM GOTO PRINT_OUT_JENKINS_ERROR_FOUND
+REM GOTO EOF
+
 :HTML_FOUND
 REM echo html found
 GOTO PRINT_OUT_CURL_ERROR
 GOTO EOF
+
+:DOCTYPE_FOUND
+REM echo doctype found
+GOTO PRINT_OUT_SERVER_ERROR
+GOTO EOF
+
 :JENKINSFILE_FOUND
 REM echo Jenkinsfile found
 GOTO PRINT_OUT_JENKINS_SUCCESS
@@ -114,6 +128,12 @@ GOTO EOF
 
 :PRINT_OUT_CURL_ERROR
 ECHO %Magenta%Error found in CURL, please check syntax or credentials
+ECHO.%Red%
+FOR /F "tokens=*" %%x in (%ERRORFILE%) DO echo %%x
+GOTO EOF
+
+:PRINT_OUT_SERVER_ERROR
+ECHO %Magenta%Server Error detected. Please check your LOG files
 ECHO.%Red%
 FOR /F "tokens=*" %%x in (%ERRORFILE%) DO echo %%x
 GOTO EOF
