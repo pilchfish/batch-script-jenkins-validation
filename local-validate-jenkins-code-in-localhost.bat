@@ -37,7 +37,7 @@ REM START "C:\Program Files\Jenkins WAR\jenkins.war"
 REM CMD java jar "C:\Program Files\Jenkins WAR\pipeline.gdsl\"
 ECHO localhost and file :: %FILE%
 REM START "chrome.exe" %FILE% "http://localhost:8080/pipeline-model-converter/validate"
-curl -X POST -F %FILE% http://localhost:8080/pipeline-model-converter/validate 1>&2 >%ERRORFILE%
+curl -X POST -F %FILE% %_web_protocal_localhost%:%_localhost_port%%_jenkins_validate_uri% 1>&2 >%ERRORFILE%
 REM curl -u <username:api_key> -X POST -H <crumb> -F %FILE% https://deployjenkins.utils.dnbaws.net/pipeline-model-converter/validate 1>&2 >%ERRORFILE%
 
 ECHO %Yellow%
@@ -54,10 +54,18 @@ IF EXIST %ERRORFILE% (
             ECHO %Magenta%All hope is lost!!
             ECHO.%Red%
             FOR /F "tokens=*" %%x in (%ERRORFILE%) DO echo %%x
-        ) else (
+        )
+        REM else (
+        findstr /i "Jenkins" %ERRORFILE%>nul
+        if errorlevel ==0 (
+            REM ECHO %Magenta%Your code has hope!
             ECHO.
             ECHO %Green%
-            REM FOR /F "tokens=*" %%x in (%ERRORFILE%) DO echo %%x
+            FOR /F "tokens=*" %%x in (%ERRORFILE%) DO echo %%x
+            ECHO:
+            ECHO OK if your code is not Declarative as potential not required in Scripted,
+            ECHO therefore...
+            ECHO:
             ECHO %Magenta%Your code has hope!
         )
     REM )

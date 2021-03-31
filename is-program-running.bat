@@ -1,15 +1,35 @@
-ECHO "is-program-running
-title: "Jenkins Code Val_idation"
-
 ECHO OFF
+title: "Jenkins Code Validation Script"
+
+:: IMPORTANT must call and load configuraton.bat file first
+ECHO config_file :: %_has_config_file_been_loaded%
+:FIRSTTIMELOADCONFIGURATIONFILE
+if defined _has_config_file_been_loaded (GOTO SECONDTIMELOADCONFIGURATIONFILE) else (GOTO LOADCONFIGURATIONFILE)
+:SECONDTIMELOADCONFIGURATIONFILE
+if %_has_config_file_been_loaded%=="true" (
+    set /p _load_config_choice="If terminal not refreshed, do you wish to (re)load configuration file? (y/yes/n/no) "
+    if %_load_config_choice%=="y" if %_load_config_choice%=="yes" (
+        GOTO LOADCONFIGURATIONFILE
+    )ELSE GOTO MAIN_MENU
+) ELSE GOTO LOADCONFIGURATIONFILE
+
+:LOADCONFIGURATIONFILE
+if EXIST configuration.bat (
+    call configuration.bat
+    set _has_config_file_been_loaded="true"
+    ) else (
+        ECHO no configuration file found!!!
+        set _has_config_file_been_loaded="false"
+    )
+) GOTO EOF
 
 :: batch script variables
 set _COUNTER=0
 set _ATTEMPT_LIMIT_REACHED=2
-set _JENKINS_FILE_PREFIX=local-validate-jenkins-code-in-
-REM set MENU_INPUT
-:: commandline arg1 = jenkins file to val_idate
+
+:: commandline arg1 = jenkins file to validate
 set arg1=%1
+
 
 :TESTFILEPASSEDINASARG1
 if [%1] == [] (
@@ -17,10 +37,9 @@ if [%1] == [] (
     GOTO EOF
 )
 GOTO DOESJENKINSFILEEXIST
-set FILE="jenkinsfile=%arg1%"
 
 
-:MENU
+:MAIN_MENU
 ECHO:
 ECHO Select local or cloud Jenkins Server to validate against
 ECHO.
@@ -36,7 +55,7 @@ ECHO:
 ECHO  x. to EXIT
 ECHO ************************
 ECHO.
-set /p _id="Enter your selection: "
+set /p _main_menu_id="Enter your selection: "
 ECHO:
 
 GOTO VALIDATEINPUT
@@ -50,25 +69,32 @@ EXIT /B %ERRORLEVEL%
 :: MENU and Input Val_idation
 :DOESJENKINSFILEEXIST
 if EXIST %arg1% (
-    GOTO MENU
+    set FILE="jenkinsfile=%arg1%"
+    GOTO MAIN_MENU
     ) else (
-        echo file no exist
+        echo file no exist, please try again.
     )
 GOTO EOF
 
 :VALIDATEINPUT
-if %_id% EQU 1 (
+if %_main_menu_id% EQU 1 (
     GOTO LOCALHOST_JENKINS
     )
-if %_id% EQU 2 (
+if %_main_menu_id% EQU 2 (
     GOTO CLOUD_JENKINS
     )
-if %_id% EQU 3 (
+if %_main_menu_id% EQU 3 (
     GOTO CHANGE_FILE
 )
-if "%_id%"=="x" (GOTO EOF)
-if "%_id%"=="X" (GOTO EOF)
-if %_id% NEQ 1 if %_id% NEQ 2 (
+if %_main_menu_id% EQU 4 (
+    GOTO CHANGE_FILE
+)
+if %_main_menu_id% EQU 5 (
+    GOTO CLOUDSETUP
+)
+if "%_main_menu_id%"=="x" (GOTO EOF)
+if "%_main_menu_id%"=="X" (GOTO EOF)
+if %_main_menu_id% NEQ 1 if %_main_menu_id% NEQ 2 if %_main_menu_id% NEQ 4 if %_main_menu_id% NEQ 5(
     GOTO WRONGINPUTSELECTION
 )
 GOTO EOF
@@ -76,7 +102,7 @@ GOTO EOF
 :WRONGINPUTSELECTION
 ECHO:
 ECHO Error!... Please make make a selection off menu
-GOTO MENU
+GOTO MAIN_MENU
 GOTO EOF
 
 :: LOCALHOST JENKINS FLOW (methods)
@@ -120,7 +146,7 @@ GOTO EOF
     ECHO:
     ECHO will now validate code to Local Jenkins server
     ECHO validation file to send ::  %FILE%
-    call %_JENKINS_FILE_PREFIX%localhost.bat %FILE%
+    call %_jenkins_file_prefix%localhost.bat %FILE%
     GOTO EOF
 
 
@@ -130,7 +156,8 @@ GOTO EOF
     :VALATECODECLOUD
     ECHO:
     ECHO will now validate code to Cloud Jenkins server
-    call %_JENKINS_FILE_PREFIX%cloud.bat "%FILE%"
+    ECHO validation file to send ::  %FILE%
+    call %_jenkins_file_prefix%cloud.bat "%FILE%"
     GOTO EOF
 
 :: CHANGE_FILE FLOW (methods)
@@ -154,7 +181,7 @@ GOTO EOF
     )
     REM GOTO DOESJENKINSFILEEXIST
     set FILE="jenkinsfile=%arg1%"
-    GOTO MENU
+    GOTO MAIN_MENU
 
 
 :: Set up Credentials for Cloud Jenkins
@@ -164,22 +191,25 @@ GOTO EOF
     ECHO Setup cloud Jenkins Server
     ECHO.
     ECHO ****** CLOUD MENU *******
-    ECHO  1. Username and API key
+    ECHO  1. Get Jenkins Cloud API key
     ECHO  2. CRUMB
     ECHO:
     ECHO  x. back to Main Menu
     ECHO ************************
+    ECHO.
+    set /p _cloud_menu_id="Enter your selection: "
+    ECHO:
 
     :VALIDATEINPUT
-    if %_id% EQU 1 (
+    if %_cloud_menu_id% EQU 1 (
         GOTO GETCLOUDUSERNAME
         )
-    if %_id% EQU 2 (
-        GOTO GETCLOUDAPIKEY
+    if %_cloud_menu_id% EQU 2 (
+        GOTO GETCLOUDCRUMB
         )
-    if "%_id%"=="x" (GOTO EOF)
-    if "%_id%"=="X" (GOTO EOF)
-    if %_id% NEQ 1 if %_id% NEQ 2 (
+    if "%_cloud_menu_id%"=="x" (GOTO MAIN_MENU)
+    if "%_cloud_menu_id%"=="X" (GOTO MAIN_MENU)
+    if %_cloud_menu_id% NEQ 1 if %_cloud_menu_id% NEQ 2 (
         GOTO WRONGINPUTSELECTION
     )
     GOTO EOF
@@ -191,35 +221,61 @@ GOTO EOF
     GOTO EOF
 
 
-    :GETUSERDETAILS
+    :GETUSERDETAILSCLOUD
 
         :GETCLOUDUSERNAME
-        set /p _cloud_user_name="Please enter your Jenkins Cloud username: "
-        if [%_cloud_user_name%] == [] (
+        if [%_jenkins_cloud_username%] == [] (
             ECHO No username added, please enter again...
-            GOTO GETUSERDETAILS
+            GOTO SETCLOUDUSERNAME
         )
-        GOTO GETUSERDETAILS
+        ECHO Username to be used is: %_jenkins_cloud_username%
+        GOTO GETCLOUDAPIKEY
         GOTO EOF
+
+        :SETCLOUDUSERNAME
+        set /p _jenkins_cloud_username="Please enter your Jenkins Cloud username: "
 
         :GETCLOUDAPIKEY
-        ECHO **** Intructions ****
-        ECHO Chrome will open in another window, and take you to the Jenkins settings page
-        ECHO You will need to click on 'Show Legacy API Key' to display the details
-        ECHO Then Copy&Paste the required API key back into this windows command prompt
-        timeout /T 10
-        start /wait chrome.exe https://deployjenkins.utils.dnbaws.net/user/%_cloud_user_name%/configure
-        set /p _cloud_api_key="Please enter your Jenkins Cloud API key: "
-        if [%_cloud_api_key%] == [] (
-            ECHO No API added, please enter again...
+            :LOADCLOUDAPIKEY
+            ECHO **** Intructions ****
+            ECHO Your default browser will open in another window, and take you to the Jenkins settings page
+            ECHO You will need to click on 'Show Legacy API Key' to display the details
+            ECHO Then "Copy&Paste" the required API key back into this windows command prompt
+            ECHO:
+            ECHO You can close the Browser window once copied
+            ECHO:
+            timeout /T 10
+            ECHO %_default_browser% %_https%%_dnb_base_url_jenkins%%_jenkins_api_key_uri%
+            start %_default_browser% %_https%%_dnb_base_url_jenkins%%_jenkins_api_key_uri%
+                :COPYCLOUDAPIKEY
+                set /p _cloud_api_key="Please enter your Jenkins Cloud API key: "
+                if [%_cloud_api_key%] == [] (
+                    ECHO No API added, please enter again...
+                    GOTO COPYCLOUDAPIKEY
+                )
             GOTO CLOUDSETUP
-        )
-        GOTO GETUSERDETAILS
-        GOTO EOF
+            GOTO EOF
 
-
-
-
+            :GETCLOUDCRUMB
+            ECHO **** Intructions ****
+            ECHO Your default browser will open in another window, and take you to the Jenkins settings page
+            ECHO You will need to click on 'Show Legacy API Key' to display the details
+            ECHO Then "Copy&Paste" the required API key back into this windows command prompt
+            ECHO:
+            ECHO You can close the Browser window once copied
+            ECHO:
+            timeout /T 10
+            ECHO %_default_browser% %_https%%_dnb_base_url_jenkins%%_jenkins_crumb_uri%
+            start %_default_browser% %_https%%_dnb_base_url_jenkins%%_jenkins_crumb_uri%
+                :COPYCLOUDCRUMBKEY
+                set _cloud_crumb_key=
+                set /p _cloud_crumb_key="Please enter your Jenkins Cloud CRUMB key: "
+                if [%_cloud_crumb_key%] == [] (
+                    ECHO No CRUMB added, please enter again...
+                    GOTO COPYCLOUDCRUMBKEY
+                )
+            GOTO CLOUDSETUP
+            GOTO EOF
 
 :: LAST METHOD OF THEM ALL
 :EOF
