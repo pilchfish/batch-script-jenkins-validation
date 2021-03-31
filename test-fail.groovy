@@ -1,11 +1,11 @@
 package passthroughpipelines;
 
+def cmd_exec(command) {
+    return bat(returnStdout: true, script: "${command}").trim()
+}
 
 node {
 
-    def cmd_exec(command) {
-        return bat(returnStdout: true, script: "${command}").trim()
-    }
 
     def build_ok = true
 

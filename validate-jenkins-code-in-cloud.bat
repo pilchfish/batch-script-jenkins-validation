@@ -13,12 +13,12 @@ set White=%ESC%[37m
 setlocal ENABLEDELAYEDEXPANSION
 
 :: set vriables if running as stand alone file
-set arg1=%1
-if [%1] == [] (
-    ECHO %Red%No Jenkins file passed as arg1
-    EXIT /B
-)
-set FILE="jenkinsfile=<%arg1%"
+REM set arg1=%1
+REM if [%1] == [] (
+REM     ECHO %Red%No Jenkins file passed as arg1
+REM     EXIT /B
+REM )
+REM set FILE="jenkinsfile=<%arg1%"
 
 set ERRORFILE=errors_found.txt
 
@@ -35,14 +35,14 @@ IF EXIST error.txt del error.txt
 IF EXIST jenkins.txt del jenkins.txt
 IF EXIST jenkinsfile.txt del jenkinsfile.txt
 IF EXIST html.txt del html.txt
-
+tmeout 1
 
 :CURL
 ECHO %Yellow% Initiating CURL now...
 ECHO %Cyan%
 ECHO file to test :: %FILE%
 ECHO:
-curl -u %_jenkins_cloud_username%:%_jenkins_api_key_uri% -X POST -H %_jenkins_crumb_uri% -F %FILE% https://%_dnb_base_url_jenkins%%_jenkins_validate_uri% 1>&2 >%ERRORFILE%
+curl -u %_jenkins_cloud_username%:%_cloud_api_key% -X POST -H %_jenkins_crumb_uri% -F %FILE% https://%_dnb_base_url_jenkins%%_jenkins_validate_uri% 1>&2 >%ERRORFILE%
 
 ECHO %Yellow%
 REM timeout 3
@@ -93,7 +93,7 @@ GOTO EOF
 ECHO %Magenta%
     :PICK_RANDOM_ERROR_TEXT_MESSAGE
     set /a rand=%random% %%10
-    for /f "tokens=1* delims=:" %%i in ('findstr /n .* "text_messages_error.txt"') do (
+    for /f "tokens=1* delims=:" %%i in ('findstr /n .* "text_message_error.txt"') do (
         if "%%i"=="%rand%" echo %%j
     )
 ECHO.%Red%
@@ -104,10 +104,11 @@ GOTO EOF
 ECHO %Magenta%
     :PICK_RANDOM_SUCCESS_TEXT_MESSAGE
     set /a rand=%random% %%6
-    for /f "tokens=1* delims=:" %%i in ('findstr /n .* "text_messages_success.txt"') do (
+    for /f "tokens=1* delims=:" %%i in ('findstr /n .* "text_message_success.txt"') do (
         if "%%i"=="%rand%" echo %%j
     )
 ECHO %Green%
+ECHO But...
 FOR /F "tokens=*" %%x in (%ERRORFILE%) DO echo %%x
 GOTO EOF
 

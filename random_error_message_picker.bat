@@ -10,6 +10,6 @@ REM ECHO OFF
 REM for /f "tokens=1* delims=:" %%i in ('findstr /n .* "error_text_messages.txt"') do (
 :PICK_RANDOM_ERROR_TEXT_MESSAGE
 set /a rand=%random% %%9
-for /f "tokens=1* delims=:" %%i in ('findstr /n .* "error_text_messages.txt"') do (
+for /f "tokens=1* delims=:" %%i in ('findstr /n .* "text_message_error.txt"') do (
 if "%%i"=="%rand%" echo %%j
 )
