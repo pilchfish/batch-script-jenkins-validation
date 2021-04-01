@@ -12,13 +12,17 @@ REM set _cloud_api_key=
 set _default_browser=<add_your_default_browser.exe>
 
 
-:: Default - Job specific
+:: main batch script variables
+set _COUNTER_TO_START_JENKINS_LOCALHOST_SERVER=0
+set _ATTEMPT_LIMIT_REACHED_TO_START_JENKINS_LOCALHOST_SERVER=2
 
 :: Jenkins Cloud Details
 set _web_protocol_cloud=https://
 :: Jenkins Localhost Details
 set _web_protocal_localhost=http://localhost
 set _localhost_port=8080
+set _drive_letter=C:
+set _path_to_jenkins_war=Program Files\Jenkins WAR
 
 :: URLs for Jenkins
 set _dnb_base_url_jenkins=<add_your_jenkins_base_URL>
@@ -29,5 +33,7 @@ set _jenkins_validate_uri=/pipeline-model-converter/validate
 :: file paths
 set _jenkins_file_prefix=local-validate-jenkins-code-in-
 
+
+set _has_config_file_been_loaded=true
 
 REM for /f "delims=" %%x in (configuration.txt) do (set "%%x")

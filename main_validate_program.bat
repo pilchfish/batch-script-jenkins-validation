@@ -1,37 +1,10 @@
 ECHO OFF
 title: "Jenkins Code Validation Script"
-setlocal ENABLEDELAYEDEXPANSION
-
-:: IMPORTANT must call and load configuraton.bat file first
-ECHO config_file :: %_has_config_file_been_loaded%
-:FIRSTTIMELOADCONFIGURATIONFILE
-if defined _has_config_file_been_loaded (GOTO SECONDTIMELOADCONFIGURATIONFILE) else (GOTO LOADCONFIGURATIONFILE)
-:SECONDTIMELOADCONFIGURATIONFILE
-if %_has_config_file_been_loaded%=="true" (
-    set /p _load_config_choice="If terminal not refreshed, do you wish to (re)load configuration file? (y/yes/ any other key to ignore) "
-    if %_load_config_choice%=="y" if %_load_config_choice%=="yes" (
-        GOTO LOADCONFIGURATIONFILE
-    )ELSE GOTO MAIN_MENU
-) ELSE GOTO LOADCONFIGURATIONFILE
-
-:LOADCONFIGURATIONFILE
-if EXIST configuration.bat (
-    call configuration.bat
-    set _has_config_file_been_loaded="true"
-    ) else (
-        ECHO no configuration file found!!!
-        set _has_config_file_been_loaded="false"
-    )
-) GOTO EOF
-
-:: batch script variables
-set _COUNTER=0
-set _ATTEMPT_LIMIT_REACHED=2
 
 :: commandline arg1 = jenkins file to validate
 set arg1=%1
 
-
+:: checks if argument passed in if not exit Program
 :TESTFILEPASSEDINASARG1
 if [%1] == [] (
     ECHO No Jenkins file passed as arg1
@@ -39,6 +12,45 @@ if [%1] == [] (
 )
 GOTO DOESJENKINSFILEEXIST
 
+:: checks if file exists which has been passed in via arg into program
+:DOESJENKINSFILEEXIST
+if EXIST %arg1% (
+    set FILE="jenkinsfile=%arg1%"
+    GOTO FIRSTTIMELOADCONFIGURATIONFILE
+    ) else (
+        echo Jenkins file does not exist, please try again.
+        GOTO EOF
+    )
+
+:: IMPORTANT must call and load configuraton.bat file first
+:FIRSTTIMELOADCONFIGURATIONFILE
+REM IF DEFINED _has_config_file_been_loaded ( ECHO is defined ) else ( echo is NOT defined )
+IF DEFINED _has_config_file_been_loaded ( GOTO SECONDTIMELOADCONFIGURATIONFILE ) ELSE ( GOTO LOADCONFIGURATIONFILE )
+
+:LOADCONFIGURATIONFILE
+if EXIST configuration.bat (
+    call configuration.bat
+    REM :: my config file for testing only
+    REM call C:\codebase\batch_scripts\configuration.bat
+    ECHO configuiration.file Loaded!!
+    ) else (
+        echo Configuration file not found!!
+        set _has_config_file_been_loaded=
+        GOTO EOF
+    )
+GOTO MAIN_MENU
+
+:SECONDTIMELOADCONFIGURATIONFILE
+set /p _load_config_choice="If terminal not refreshed, do you wish to (re)load configuration file? ('y'/'n') "
+GOTO VALIDATECONFIGINPUT
+
+:: MENU and Input Validation
+:VALIDATECONFIGINPUT
+if %_load_config_choice%=="y" if %_load_config_choice%=="yes" if %_load_config_choice%=="Yes" if %_load_config_choice%=="YES" if %_load_config_choice%=="Y" (
+    GOTO LOADCONFIGURATIONFILE
+    ) ELSE (
+        GOTO MAIN_MENU
+    )
 
 :MAIN_MENU
 ECHO:
@@ -65,19 +77,7 @@ GOTO VALIDATEINPUT
 ECHO errorlevel is ::  %ERRORLEVEL%
 EXIT /B %ERRORLEVEL%
 
-
-:: FUNCTIONS
-
-:: MENU and Input Val_idation
-:DOESJENKINSFILEEXIST
-if EXIST %arg1% (
-    set FILE="jenkinsfile=%arg1%"
-    GOTO MAIN_MENU
-    ) else (
-        echo file no exist, please try again.
-    )
-GOTO EOF
-
+:: MENU and Input Validation
 :VALIDATEINPUT
 if %_main_menu_id% EQU 1 (
     GOTO LOCALHOST_JENKINS
@@ -145,14 +145,16 @@ GOTO EOF
     GOTO EOF
 
     :STARTLOCALJENKINS
-    if %_COUNTER% LEQ %_ATTEMPT_LIMIT_REACHED% (
-        ECHO Local Jenkin Server is NOT running
-        ECHO Will attempt to start Server now
+    ECHO Local Jenkin Server is NOT running
+    ECHO Will attempt to start Server now
+    ECHO Number of attemps to Start Local Jenkins Server = %_COUNTER_TO_START_JENKINS_LOCALHOST_SERVER%
+    set /A _COUNTER_TO_START_JENKINS_LOCALHOST_SERVER=%_COUNTER_TO_START_JENKINS_LOCALHOST_SERVER%+1
+    SETLOCAL ENABLEDELAYEDEXPANSION
+    if %_COUNTER_TO_START_JENKINS_LOCALHOST_SERVER% LEQ %_ATTEMPT_LIMIT_REACHED_TO_START_JENKINS_LOCALHOST_SERVER% (
         START cmd /C java -jar "%_drive_letter%\%_path_to_jenkins_war%\jenkins.war"
         REM START cmd /C java -jar "C:\Program Files\Jenkins WAR\jenkins.war"
+        ENDLOCAL
         timeout /T 20
-        set /A _COUNTER=!_COUNTER!+1
-        ECHO !_COUNTER!
         GOTO ISJENKINSSERVERRUNNING
     ) else (
         GOTO DECISIONTIME
@@ -403,5 +405,6 @@ GOTO EOF
 
 :: LAST METHOD OF THEM ALL
 :EOF
-ECHO Exiting Program, have a nice day!
+ECHO %green% Exiting Program, have a nice day!
+echo.%white%
 EXIT /B 0

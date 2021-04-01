@@ -12,6 +12,19 @@ set White=%ESC%[37m
 
 setlocal ENABLEDELAYEDEXPANSION
 
+:: loads number of options to choose from from text_message_success.txt
+for /f %%b in ('type text_message_success.txt ^| find "" /v /c') do (
+    REM echo line count is %%b
+    set _success_message_lines=%%b
+    )
+)
+:: loads number of options to choose from from text_message_error.txt
+for /f %%b in ('type text_message_error.txt ^| find "" /v /c') do (
+    REM echo line count is %%b
+    set _error_message_lines=%%b
+    )
+)
+
 :: set vriables if running as stand alone file
 REM set arg1=%1
 REM if [%1] == [] (
@@ -106,7 +119,7 @@ GOTO EOF
 :PRINT_OUT_JENKINS_ERROR_FOUND
 ECHO %Magenta%
     :PICK_RANDOM_ERROR_TEXT_MESSAGE
-    set /a rand=%random% %%10
+    set /a rand=%random% %%_error_message_lines
     for /f "tokens=1* delims=:" %%i in ('findstr /n .* "text_message_error.txt"') do (
         if "%%i"=="%rand%" echo %%j
     )
@@ -117,7 +130,7 @@ GOTO EOF
 :PRINT_OUT_JENKINS_SUCCESS
 ECHO %Magenta%
     :PICK_RANDOM_SUCCESS_TEXT_MESSAGE
-    set /a rand=%random% %%6
+    set /a rand=%random% %%_success_message_lines
     for /f "tokens=1* delims=:" %%i in ('findstr /n .* "text_message_success.txt"') do (
         if "%%i"=="%rand%" echo %%j
     )
@@ -141,4 +154,5 @@ GOTO EOF
 :EOF
 ECHO.
 ECHO %White%
+ENDLOCAL
 EXIT /B 0
