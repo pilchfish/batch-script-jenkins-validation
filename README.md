@@ -58,6 +58,8 @@ As mention on the Jenkins.io website https://www.jenkins.io/doc/book/pipeline/de
 
 On re-running the program again the User is presented with an option to re-load from the configuration.bat file or ignore. This option is there so any previously set parameters from the previous run are not overwritten.
 
+**NB** ***sensitive*** information can and will be stored in Windows envs, but only during that Terminal session. Nothing is saved using **setx** so all envs including API Keys and Usernames, Jenkin CRUMB details will be lost when Terminal is closed. To wipe any envs set by the .bat script you must **close the TComand Line Terminal the code was ran in**
+
 
 
 # Bugs
